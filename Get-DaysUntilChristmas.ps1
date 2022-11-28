@@ -6,10 +6,17 @@ Gets a count of the days remaining until Christmas.
 .DESCRIPTION
 Returns the days remaining until Christmas as ASCII art.
 
-Please give to cancer research this holiday season.
+Please consider giving to cancer research this holiday season.
 
 .PARAMETER indent
 Specifies the number of characters to indent.
+
+.PARAMETER days
+Forces a value for the number of days to display.
+
+.PARAMETER nowait
+Specifies not to wait for the ENTER keypress.
+Waiting is enabled by default for "Run with PowerShell" compatibility.
 
 .PARAMETER debug
 Debugging displays the character indexes and color assignments.
@@ -18,15 +25,23 @@ Debugging displays the character indexes and color assignments.
 None.
 
 .OUTPUTS
-A colorful holiday display.
+A colorful holiday display in the console window.
 
 .EXAMPLE
 .\Get-DaysUntilChristmas.ps1
-Starts with the default options.
+Starts the program with the default options.
 
 .EXAMPLE
-.\Get-DaysUntilChristmas.ps1 -indent 20
-Starts with a specific left-hand indentation value.
+.\Get-DaysUntilChristmas.ps1 -indent 16
+Starts the program with a specific left-hand indentation value.
+
+.EXAMPLE
+.\Get-DaysUntilChristmas.ps1 -days 123
+Starts the program with a specific number of days to display.
+
+.EXAMPLE
+.\Get-DaysUntilChristmas.ps1 -nowait
+Ends the program without waiting for the ENTER keypress.
 
 .EXAMPLE
 .\Get-DaysUntilChristmas.ps1 -debug
@@ -55,10 +70,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-If you enjoy this utility, please do something kind for free.
+If you enjoy this software, please do something kind for free.
 
 History:
 01.00 2022-Nov-25 Scott S. Initial release.
+01.01 2022-Nov-28 Scott S. Added a missing color index and no-wait option.
 
 .LINK
 https://en.wikipedia.org/wiki/ASCII_art
@@ -73,7 +89,9 @@ https://www.cancer.org/
 
 param
 (
-    [int]$indent = 5
+    [int]$indent = 4
+  , [int]$days = -1
+  , [switch]$nowait
   , [switch]$debug
 )
 
@@ -103,6 +121,7 @@ $ascii = @"
 "@;
 
 # define a set of digits with identical heights and widths
+# (uses a modified roman figlet font)
 $digits = @"
   .oooo.
  d8P 'Y8b. 
@@ -176,7 +195,7 @@ Y88..  .8'
   .oP
 "@;
 
-# specify the additional digit information
+# define the digit structure
 $height = 7;
 $width  = 11;
 $lines  = $digits.Split("`n");
@@ -184,7 +203,7 @@ $label  = "-- Days to Wait Until Christmas --";
 
 # define a default color and all index replacement colors
 $default = [System.ConsoleColor]::Green;
-$colors = @{
+$colors  = @{
 
   # tree
   12  = [System.ConsoleColor]::Yellow
@@ -233,12 +252,12 @@ $colors = @{
   259 = [System.ConsoleColor]::Red
   263 = [System.ConsoleColor]::Cyan
 
-  298 = [System.ConsoleColor]::White
   299 = [System.ConsoleColor]::White
   300 = [System.ConsoleColor]::White
   301 = [System.ConsoleColor]::White
   302 = [System.ConsoleColor]::White
   303 = [System.ConsoleColor]::White
+  304 = [System.ConsoleColor]::White
 
   305 = [System.ConsoleColor]::DarkGray
   306 = [System.ConsoleColor]::DarkGray
@@ -306,7 +325,7 @@ $colors = @{
 
 }
 
-# loop through each of the asci art characters
+# loop through each of the ascii art characters
 for ($idx = 0; $idx -lt $ascii.Length; $idx++)
 {
 
@@ -323,7 +342,7 @@ for ($idx = 0; $idx -lt $ascii.Length; $idx++)
              -NoNewline;
 
   # indent after each end-of-line character is detected
-  if ($ascii[$idx] -eq "`n")
+  if ((-not $debug.IsPresent) -and ($ascii[$idx] -eq "`n"))
   {
     Write-Host -Object (" " * $indent) `
                -NoNewline;
@@ -339,14 +358,23 @@ for ($idx = 0; $idx -lt $ascii.Length; $idx++)
 }
 Write-Host;
 
-# calculate the days remaining
-$target = (Get-Date -Year (Get-Date).Year `
-                    -Month 12 `
-                    -Day 25);
-$days   = (New-TimeSpan -Start (Get-Date).Date `
-                        -End $target.Date).Days + 1;
+# calculate the days remaining value
+if ($days -lt 0)
+{
+  $target = (Get-Date -Year (Get-Date).Year `
+                      -Month 12 `
+                      -Day 25);
+  $days   = (New-TimeSpan -Start (Get-Date).Date `
+                          -End $target.Date).Days;
+}
 
-# display the days remaining as large digits
+# Sanity check (date has already passed for the current year)
+if ($days -lt 0)
+{
+  $days = 0;
+}
+
+# display the days remaining value as large digits
 $chars = $days.ToString().PadLeft(3, '0').ToCharArray();
 $d0 = [int]($chars[0].ToString());
 $d1 = [int]($chars[1].ToString());
@@ -384,4 +412,12 @@ for ($idx = 0; $idx -lt $chars.Length; $idx++)
              -ForegroundColor $color `
              -NoNewline;
 }
-Write-Host "`n";
+
+# wait for the enter keypress before exiting
+Write-Host -Object "`n";
+if (-not $nowait.IsPresent)
+{
+  Write-Host -Object (" " * $indent) `
+             -NoNewline;
+  Read-Host "Press the ENTER key to continue";
+}
