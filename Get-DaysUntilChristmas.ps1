@@ -6,6 +6,8 @@ Gets a count of the days remaining until Christmas.
 .DESCRIPTION
 Returns the days remaining until Christmas as ASCII art.
 
+Right-click this script and select the "Run with PowerShell" menu item.
+
 Please consider giving to cancer research this holiday season.
 
 .PARAMETER from
@@ -99,8 +101,8 @@ https://www.cancer.org/
 param
 (
     [DateTime]$from = (Get-Date)
-  , [int]$indent = 4
-  , [int]$days = -1
+  , [int]$indent    = 4
+  , [int]$days      = (-1)
   , [switch]$nowait
   , [switch]$debug
 )
