@@ -8,6 +8,10 @@ Returns the days remaining until Christmas as ASCII art.
 
 Please consider giving to cancer research this holiday season.
 
+.PARAMETER from
+Specifies a specific from-date to use for the calculation.
+The count reflects the number of days until Christmas for that same year.
+
 .PARAMETER indent
 Specifies the number of characters to indent.
 
@@ -30,6 +34,10 @@ A colorful holiday display in the console window.
 .EXAMPLE
 .\Get-DaysUntilChristmas.ps1
 Starts the program with the default options.
+
+.EXAMPLE
+.\Get-DaysUntilChristmas.ps1 -from (Get-Date -Year 1969 -Month 7 -Day 16)
+Starts the program with a specific from-date.
 
 .EXAMPLE
 .\Get-DaysUntilChristmas.ps1 -indent 16
@@ -75,6 +83,7 @@ If you enjoy this software, please do something kind for free.
 History:
 01.00 2022-Nov-25 Scott S. Initial release.
 01.01 2022-Nov-28 Scott S. Added a missing color index and no-wait option.
+01.02 2022-Nov-29 Scott S. Added a from-date option.
 
 .LINK
 https://en.wikipedia.org/wiki/ASCII_art
@@ -89,7 +98,8 @@ https://www.cancer.org/
 
 param
 (
-    [int]$indent = 4
+    [DateTime]$from = (Get-Date)
+  , [int]$indent = 4
   , [int]$days = -1
   , [switch]$nowait
   , [switch]$debug
@@ -195,7 +205,7 @@ Y88..  .8'
   .oP
 "@;
 
-# define the digit structure
+# define the data structure of the digits
 $height = 7;
 $width  = 11;
 $lines  = $digits.Split("`n");
@@ -361,14 +371,14 @@ Write-Host;
 # calculate the days remaining value
 if ($days -lt 0)
 {
-  $target = (Get-Date -Year (Get-Date).Year `
+  $target = (Get-Date -Year $from.Year `
                       -Month 12 `
                       -Day 25);
-  $days   = (New-TimeSpan -Start (Get-Date).Date `
+  $days   = (New-TimeSpan -Start $from.Date `
                           -End $target.Date).Days;
 }
 
-# Sanity check (date has already passed for the current year)
+# sanity check (date has already passed for the current year)
 if ($days -lt 0)
 {
   $days = 0;
@@ -397,7 +407,7 @@ for ($idx = 0; $idx -lt $height; $idx++)
 }
 Write-Host;
 
-# Display the days remaining label with alternating colors
+# display the days remaining label with alternating colors
 $chars = $label.ToCharArray();
 Write-Host -Object (" " * $indent) `
            -NoNewline;
