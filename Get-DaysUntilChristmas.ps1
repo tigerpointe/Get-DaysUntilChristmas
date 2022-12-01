@@ -11,17 +11,21 @@ Right-click this script and select the "Run with PowerShell" menu item.
 Please consider giving to cancer research this holiday season.
 
 .PARAMETER from
-Specifies a specific from-date to use for the calculation.
+Specifies a particular from-date to use for the calculation.
 The count reflects the number of days until Christmas for that same year.
 
 .PARAMETER indent
 Specifies the number of characters to indent.
 
 .PARAMETER days
-Forces a value for the number of days to display.
+Forces a display value for the number of days remaining.
+
+.PARAMETER noclear
+Specifies NOT to clear the screen during initialization.
+Clearing is enabled by default for "Run with PowerShell" compatibility.
 
 .PARAMETER nowait
-Specifies not to wait for the ENTER keypress.
+Specifies NOT to wait for the ENTER keypress.
 Waiting is enabled by default for "Run with PowerShell" compatibility.
 
 .PARAMETER debug
@@ -48,6 +52,10 @@ Starts the program with a specific left-hand indentation value.
 .EXAMPLE
 .\Get-DaysUntilChristmas.ps1 -days 123
 Starts the program with a specific number of days to display.
+
+.EXAMPLE
+.\Get-DaysUntilChristmas.ps1 -noclear
+Starts the program without clearing the screen.
 
 .EXAMPLE
 .\Get-DaysUntilChristmas.ps1 -nowait
@@ -84,8 +92,9 @@ If you enjoy this software, please do something kind for free.
 
 History:
 01.00 2022-Nov-25 Scott S. Initial release.
-01.01 2022-Nov-28 Scott S. Added a missing color index and no-wait option.
+01.01 2022-Nov-28 Scott S. Added a missing color index and a no-wait option.
 01.02 2022-Nov-29 Scott S. Added a from-date option.
+01.03 2022-Nov-30 Scott S. Added a no-clear option.
 
 .LINK
 https://en.wikipedia.org/wiki/ASCII_art
@@ -98,11 +107,13 @@ https://www.cancer.org/
 
 #>
 
+# define the default options
 param
 (
     [DateTime]$from = (Get-Date)
   , [int]$indent    = 4
   , [int]$days      = (-1)
+  , [switch]$noclear
   , [switch]$nowait
   , [switch]$debug
 )
@@ -136,7 +147,7 @@ $ascii = @"
 # (uses a modified roman figlet font)
 $digits = @"
   .oooo.
- d8P 'Y8b. 
+ d8P 'Y8b.
 888    888
 888    888
 888    888
@@ -207,7 +218,7 @@ Y88..  .8'
   .oP
 "@;
 
-# define the data structure of the digits
+# define the structure of the digits data
 $height = 7;
 $width  = 11;
 $lines  = $digits.Split("`n");
@@ -217,7 +228,7 @@ $label  = "-- Days to Wait Until Christmas --";
 $default = [System.ConsoleColor]::Green;
 $colors  = @{
 
-  # tree
+  # tree (star)
   12  = [System.ConsoleColor]::Yellow
   13  = [System.ConsoleColor]::Yellow
   14  = [System.ConsoleColor]::Yellow
@@ -241,6 +252,7 @@ $colors  = @{
   64  = [System.ConsoleColor]::Yellow
   68  = [System.ConsoleColor]::Yellow
 
+  # tree (ornaments)
   83  = [System.ConsoleColor]::Red
 
   117 = [System.ConsoleColor]::Red
@@ -264,6 +276,7 @@ $colors  = @{
   259 = [System.ConsoleColor]::Red
   263 = [System.ConsoleColor]::Cyan
 
+  # tree (base)
   299 = [System.ConsoleColor]::White
   300 = [System.ConsoleColor]::White
   301 = [System.ConsoleColor]::White
@@ -290,7 +303,7 @@ $colors  = @{
   339 = [System.ConsoleColor]::White
   340 = [System.ConsoleColor]::White
 
-  # text
+  # text label
   394 = [System.ConsoleColor]::Red
   396 = [System.ConsoleColor]::Red
   398 = [System.ConsoleColor]::Red
@@ -299,7 +312,7 @@ $colors  = @{
   405 = [System.ConsoleColor]::Red
   407 = [System.ConsoleColor]::Red
 
-  # rabbit
+  # fluffy bunny
   320 = [System.ConsoleColor]::White
   321 = [System.ConsoleColor]::White
   322 = [System.ConsoleColor]::White
@@ -337,6 +350,12 @@ $colors  = @{
 
 }
 
+# clear the console (optional)
+if (-not $noclear.IsPresent)
+{
+  Clear-Host;
+}
+
 # loop through each of the ascii art characters
 for ($idx = 0; $idx -lt $ascii.Length; $idx++)
 {
@@ -348,7 +367,7 @@ for ($idx = 0; $idx -lt $ascii.Length; $idx++)
     $color = $colors[$idx];
   }
 
-  # write the current ascii art character in color
+  # write the current ascii art character in color to the host
   Write-Host -Object $ascii[$idx] `
              -ForegroundColor $color `
              -NoNewline;
@@ -363,7 +382,7 @@ for ($idx = 0; $idx -lt $ascii.Length; $idx++)
   # use debug to show the ascii art character indexes
   if ($debug.IsPresent)
   {
-    Write-Host -Object " : $idx" `
+    Write-Host -Object " : $idx : $($color.ToString())" `
                -ForegroundColor $color;
   }
 
@@ -388,9 +407,9 @@ if ($days -lt 0)
 
 # display the days remaining value as large digits
 $chars = $days.ToString().PadLeft(3, '0').ToCharArray();
-$d0 = [int]($chars[0].ToString());
-$d1 = [int]($chars[1].ToString());
-$d2 = [int]($chars[2].ToString());
+$d0 = [int]($chars[0].ToString()); # first digit
+$d1 = [int]($chars[1].ToString()); # second digit
+$d2 = [int]($chars[2].ToString()); # third digit
 for ($idx = 0; $idx -lt $height; $idx++)
 {
   $s0 = $lines[($d0 * $height) + $idx].Replace("`r", "");
@@ -416,7 +435,7 @@ Write-Host -Object (" " * $indent) `
 for ($idx = 0; $idx -lt $chars.Length; $idx++)
 {
   $color = [System.ConsoleColor]::Red;
-  if (($idx % 2) -ne 0)
+  if (($idx % 2) -ne 0) # modulus determines odd or even
   {
     $color = [System.ConsoleColor]::Green;
   }
@@ -424,9 +443,9 @@ for ($idx = 0; $idx -lt $chars.Length; $idx++)
              -ForegroundColor $color `
              -NoNewline;
 }
-
-# wait for the enter keypress before exiting
 Write-Host -Object "`n";
+
+# wait for the enter keypress before exiting (optional)
 if (-not $nowait.IsPresent)
 {
   Write-Host -Object (" " * $indent) `
